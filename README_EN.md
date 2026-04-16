@@ -1,42 +1,38 @@
 # zig-crypto
 
-> 纯 Zig 实现的公链密码学库 — 包含国密算法 (SM2/SM3/SM4) 和主流密码原语
-
-**[English](./README_EN.md)** | 中文
-
----
-
 > Pure Zig cryptographic library for public blockchain — Chinese National Cryptographic Algorithms (SM2/SM3/SM4) & mainstream primitives
 
-Pure Zig cryptographic library for public blockchain applications. No C dependencies.
+**[中文](./README.md)** | English
+
+Pure Zig implementation with no C dependencies.
 
 [![Zig 0.16.0](https://img.shields.io/badge/Zig-0.16.0-blue.svg)](https://ziglang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
-## 特性 / Features
+## Features
 
-### 国密算法 (Chinese National Cryptographic Standards)
+### Chinese National Cryptographic Standards (国密)
 
-| 算法 | 标准 | 用途 |
-|------|------|------|
-| **SM2** | GM/T 0003-2012 | 椭圆曲线签名/验签/密钥交换 |
-| **SM3** | GM/T 0004-2012 | 杂凑算法 (256-bit hash) |
-| **SM4** | GM/T 0002-2012 | 分组密码 (128-bit block, CBC/ECB) |
+| Algorithm | Standard | Usage |
+|-----------|----------|-------|
+| **SM2** | GM/T 0003-2012 | Elliptic curve signature/verification/KEX |
+| **SM3** | GM/T 0004-2012 | Hash algorithm (256-bit) |
+| **SM4** | GM/T 0002-2012 | Block cipher (128-bit, CBC/ECB) |
 
-### 主流算法 (Mainstream Algorithms)
+### Mainstream Algorithms
 
-| 算法 | 标准 | 用途 |
-|------|------|------|
-| **secp256k1** | SECG | EVM 兼容曲线 (比特币/以太坊) |
-| **Ed25519** | RFC 8032 | 现代签名算法 |
-| **SHA-256** | FIPS 180-4 | 广泛使用的哈希 |
-| **HMAC** | RFC 2104 | 消息认证码 |
-| **Base58Check** | Bitcoin | 地址编码 |
-| **Bech32/Bech32m** | BIP 173/350 | SegWit 地址编码 |
+| Algorithm | Standard | Usage |
+|-----------|----------|-------|
+| **secp256k1** | SECG | EVM-compatible curve (Bitcoin/Ethereum) |
+| **Ed25519** | RFC 8032 | Modern signature algorithm |
+| **SHA-256** | FIPS 180-4 | Widely-used hash |
+| **HMAC** | RFC 2104 | Message authentication code |
+| **Base58Check** | Bitcoin | Address encoding |
+| **Bech32/Bech32m** | BIP 173/350 | SegWit address encoding |
 
-### 架构分层
+### Architecture Layers
 
 ```
 Layer 4 ┌─────────────────────────┐
@@ -58,24 +54,24 @@ Layer 0 ┌─────────────┴─────────
 
 ---
 
-## 安装 / Installation
+## Installation
 
-### 添加为 Zig 模块依赖
+### Add as Zig Module Dependency
 
-在 `build.zig.zon` 中添加:
+In `build.zig.zon`:
 
 ```zig
 .{
     .dependencies = .{
         .zig_crypto = .{
             .url = "https://github.com/knot3bot/zig-crypto",
-            .hash = "<从 GitHub 获取最新 hash>",
+            .hash = "<get latest hash from GitHub>",
         },
     },
 }
 ```
 
-### 直接克隆使用
+### Clone Directly
 
 ```bash
 git clone https://github.com/knot3bot/zig-crypto.git
@@ -85,108 +81,106 @@ zig build test
 
 ---
 
-## 快速开始 / Quick Start
-
-### 基础使用
+## Quick Start
 
 ```zig
 const zig_crypto = @import("zig_crypto");
 
 pub fn main() void {
-    // SM3 哈希
-    const msg = "Hello, 区块链!";
+    // SM3 hash
+    const msg = "Hello, Blockchain!";
     const digest = zig_crypto.sm3.hash(msg);
     std.debug.print("SM3: {s}\n", .{std.fmt.fmtSliceHexLower(&digest)});
 
-    // SHA-256 哈希
+    // SHA-256 hash
     const sha_digest = zig_crypto.sha256.hash(msg);
     std.debug.print("SHA256: {s}\n", .{std.fmt.fmtSliceHexLower(&sha_digest)});
 
-    // SM4 加密
+    // SM4 encryption
     const key = [_]u8{0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF,
                        0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54, 0x32, 0x10};
     const plaintext = [_]u8{0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF,
-                             0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54, 0x32, 0x10};
+                           0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54, 0x32, 0x10};
     const ciphertext = zig_crypto.sm4.encryptBlock(key, plaintext);
 }
 ```
 
 ---
 
-## API 参考 / API Reference
+## API Reference
 
-### Layer 0: 数学原语
+### Layer 0: Math Primitives
 
-#### BigInt256 — 256位大整数
+#### BigInt256 — 256-bit Unsigned Integer
 
 ```zig
 const BigInt256 = zig_crypto.math_bigint.BigInt256;
 
-// 从字节创建
-const n = BigInt256.fromBytes(&bytes);  // 32字节, big-endian
-const n = try BigInt256.fromHex("0xFFFF...");  // 从十六进制字符串
+// Create from bytes
+const n = BigInt256.fromBytes(&bytes);  // 32 bytes, big-endian
+const n = try BigInt256.fromHex("0xFFFF...");  // From hex string
 
-// 基本运算
-const sum = BigInt256.add(a, b);        // 返回 {result, carry}
-const diff = BigInt256.sub(a, b);       // 返回 {result, borrow}
-const prod = BigInt256.mul(a, b);       // 返回 256位结果
-const wide = BigInt256.mulWide(a, b);   // 返回 {low, high} 512位
+// Basic operations
+const sum = BigInt256.add(a, b);        // Returns {result, carry}
+const diff = BigInt256.sub(a, b);       // Returns {result, borrow}
+const prod = BigInt256.mul(a, b);       // Returns 256-bit result
+const wide = BigInt256.mulWide(a, b);   // Returns {low, high} 512-bit
 
-// 模运算
+// Modular arithmetic
 const mod_sum = BigInt256.addMod(a, b, m);
 const mod_sub = BigInt256.subMod(a, b, m);
 const mod_mul = BigInt256.mulMod(a, b, m);
 
-// 比较
+// Comparison
 const cmp_result = BigInt256.cmp(a, b);  // -1, 0, 1
 const eq = a.eql(b);
-const lt = BigInt256.ctLt(a, b);        // 常数时间比较
+const lt = BigInt256.ctLt(a, b);        // Constant-time comparison
 
-// 位操作
-const bit = n.getBit(0);               // 获取第 i 位
-const bit_count = n.bitCount();         // 位数
+// Bit operations
+const bit = n.getBit(0);               // Get bit at position i
+const bit_count = n.bitCount();         // Number of bits
 ```
 
-#### MontgomeryContext — 蒙哥马利乘法上下文
+#### MontgomeryContext — Montgomery Multiplication Context
 
 ```zig
 const MontgomeryContext = zig_crypto.math_modint.MontgomeryContext;
 const ctx = try MontgomeryContext.init(prime_modulus);
 
-// 转换为蒙哥马利形式
+// Convert to Montgomery form
 const a_mont = ctx.toMontgomery(a);
 const a_reg = ctx.fromMontgomery(a_mont);
 
-// 蒙哥马利乘法
+// Montgomery multiplication
 const c = ctx.montMul(a_mont, b_mont);
 
-// 模幂
+// Modular exponentiation
 const result = ctx.montExp(base, exponent);
 
-// 模逆
+// Modular inverse
 const inv = ctx.modInverse(a);
 ```
 
 ---
 
-### Layer 1: 哈希与对称加密
+### Layer 1: Hash & Symmetric Encryption
 
-#### SM3 杂凑算法
+#### SM3 Hash Algorithm
 
 ```zig
 const Sm3 = zig_crypto.sm3.Sm3;
 
-// 单次哈希
+// Single hash
 const digest = Sm3.hash("message");
 
-// 分步哈希 (流式)
+// Streaming hash
 var ctx = Sm3.init();
 ctx.update("part1");
 ctx.update("part2");
 const result = ctx.finalize();
 ```
 
-**测试向量:**
+**Test Vectors:**
 ```zig
 SM3("")        = 1ab21d8355cfa17f8e61194831e81a8f22bec8c728fefb747ed035eb5082aa2b
 SM3("abc")     = 66c7f0f462eeedd9d1f2d46bdc10e4e24167c4875cf2f7a2297da02b8f4ba8e0
@@ -198,16 +192,16 @@ SM3("abcd...") = b80fe97a4da24afc277564f66a359ef440462ad28dcc6d63adb24d5c20a6159
 ```zig
 const Sha256 = zig_crypto.sha256.Sha256;
 
-// 单次哈希
+// Single hash
 const digest = Sha256.hash("message");
 
-// 分步哈希
+// Streaming hash
 var ctx = Sha256.init();
 ctx.update("data");
 const result = ctx.finalize();
 ```
 
-**测试向量:**
+**Test Vectors:**
 ```zig
 SHA256("")        = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 SHA256("abc")     = ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
@@ -218,45 +212,45 @@ SHA256("abc")     = ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f200
 ```zig
 const Sm3Hmac = zig_crypto.hmac.Sm3Hmac;
 
-// 初始化
+// Initialize
 var ctx = Sm3Hmac.init("key");
 ctx.update("message");
 const tag = ctx.finalize();
 
-// 便捷函数
+// Convenience function
 const result = zig_crypto.hmac.hmacSm3("key", "message");
 ```
 
-#### SM4 分组密码
+#### SM4 Block Cipher
 
 ```zig
 const Sm4 = zig_crypto.sm4.Sm4;
 
-// 初始化
+// Initialize
 const key = [_]u8{0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF,
                    0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54, 0x32, 0x10};
 var ctx = Sm4.init(key);
 
-// 单块加密/解密
+// Single block encrypt/decrypt
 const ciphertext = ctx.encrypt(plaintext_block);
 const decrypted = ctx.decrypt(ciphertext);
 
-// ECB 模式
+// ECB mode
 ctx.encryptEcb(plaintext, ciphertext);
 ctx.decryptEcb(ciphertext, plaintext);
 
-// CBC 模式
+// CBC mode
 const iv = [_]u8{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
                   0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};
 ctx.encryptCbc(iv, plaintext, ciphertext);
 ctx.decryptCbc(iv, ciphertext, plaintext);
 
-// 便捷函数
+// Convenience functions
 const ct = Sm4.encryptBlock(key, block);
 const pt = Sm4.decryptBlock(key, block);
 ```
 
-**测试向量 (GM/T 0002-2012):**
+**Test Vector (GM/T 0002-2012):**
 ```zig
 Key:        0123456789ABCDEFFEDCBA9876543210
 Plaintext:  0123456789ABCDEFFEDCBA9876543210
@@ -265,16 +259,16 @@ Ciphertext: 681EDF342C58B5DB41B7387DA67B8A42
 
 ---
 
-### Layer 2: 椭圆曲线密码学
+### Layer 2: Elliptic Curve Cryptography
 
-#### SM2 签名算法
+#### SM2 Signature Algorithm
 
 ```zig
 const sm2 = zig_crypto.sm2;
 const point = zig_crypto.ecc_point;
 const BigInt256 = zig_crypto.math_bigint.BigInt256;
 
-// 初始化曲线参数
+// Initialize curve parameters
 const curve = try point.initCurveParams(
     sm2.SM2_CURVE.p,
     sm2.SM2_CURVE.a,
@@ -285,57 +279,57 @@ const curve = try point.initCurveParams(
     sm2.SM2_CURVE.h,
 );
 
-// 生成密钥对
+// Generate key pair
 const key_pair = try sm2.KeyPair.generate(curve);
 std.debug.print("Private key: {s}\n", .{key_pair.private_key.toHex()});
 
-// 从私钥创建
+// Create from existing private key
 const kp2 = try sm2.KeyPair.fromPrivateKey(private_key, curve);
 
-// 签名
+// Sign
 const id = "user@email.com";
 const signature = try sm2.sign(key_pair.private_key, message, id, &curve);
 
-// 验签
+// Verify
 const valid = try sm2.verify(key_pair.public_key, message, signature, id, &curve);
 std.debug.print("Signature valid: {}\n", .{valid});
 ```
 
-#### secp256k1 (比特币/以太坊)
+#### secp256k1 (Bitcoin/Ethereum)
 
 ```zig
 const secp256k1 = zig_crypto.secp256k1;
 const point = zig_crypto.ecc_point;
 
-// 初始化曲线
+// Initialize curve
 const curve = try secp256k1.initCurve();
 
-// 从私钥推导公钥
+// Derive public key from private key
 const G = point.AffinePoint.create(curve.gx, curve.gy);
 const pub_key = point.scalarMul(private_key, G, &curve);
 ```
 
-#### 椭圆曲线点运算
+#### Elliptic Curve Point Operations
 
 ```zig
 const point = zig_crypto.ecc_point;
 
-// 点加法
+// Point addition
 const sum = point.pointAdd(p1, p2, &curve);
 
-// 点倍乘
+// Point doubling
 const doubled = point.pointDouble(p, &curve);
 
-// 标量乘法 (double-and-add)
+// Scalar multiplication (double-and-add)
 const product = point.scalarMul(scalar, point_affine, &curve);
 
-// Jacobian 坐标转换
+// Jacobian to Affine conversion
 const affine = jacobian.toAffine(&curve);
 ```
 
 ---
 
-### Layer 3: 协议层
+### Layer 3: Protocols
 
 #### HKDF-SM3
 
@@ -349,41 +343,41 @@ const prk = hkdf_sm3.extract(salt, ikm);
 var okm: [32]u8 = undefined;
 hkdf_sm3.expand(&prk, info, &okm);
 
-// 一步完成
+// One-shot
 hkdf_sm3.hkdfSm3(salt, ikm, info, &okm);
 ```
 
-#### Merkle 树
+#### Merkle Tree
 
 ```zig
 const merkle = zig_crypto.merkle;
 
-// 计算 Merkle 根 (已哈希的叶子)
+// Compute Merkle root (from hashed leaves)
 const root = try merkle.merkleRoot(allocator, &leaves);
 
-// 从原始数据构建 (自动哈希每个叶子)
+// Build from raw data (auto-hashes each leaf)
 const root2 = try merkle.merkleRootFromData(allocator, &data_items);
 ```
 
 ---
 
-### Layer 4: 编码
+### Layer 4: Encoding
 
 #### Base58Check
 
 ```zig
 const base58 = zig_crypto.base58;
 
-// 编码
+// Encode
 const encoded = try base58.encode(allocator, data);
 defer allocator.free(encoded);
 
-// 解码
+// Decode
 const decoded = try base58.decode(allocator, encoded);
 defer allocator.free(decoded);
 
-// Base58Check (带校验和)
-const addr = try base58.encodeCheck(allocator, 0x00, payload);  // 版本号 + payload + 4字节校验
+// Base58Check (with checksum)
+const addr = try base58.encodeCheck(allocator, 0x00, payload);  // version + payload + 4-byte checksum
 ```
 
 #### Bech32/Bech32m
@@ -391,63 +385,63 @@ const addr = try base58.encodeCheck(allocator, 0x00, payload);  // 版本号 + p
 ```zig
 const bech32 = zig_crypto.bech32;
 
-// 编码
+// Encode
 const encoded = try bech32.encode(allocator, "bc", &data5, .bech32);
 defer allocator.free(encoded);
 
-// 解码
+// Decode
 const decoded = try bech32.decode(allocator, encoded);
 defer allocator.free(decoded.hrp);
 defer allocator.free(decoded.data);
 
-// 8位转5位转换
+// 8-bit to 5-bit conversion
 const data5 = try bech32.convertBits(data, 8, 5, true, allocator);
 ```
 
 ---
 
-### 工具函数
+### Utilities
 
-#### 随机数
+#### Random Numbers
 
 ```zig
 const random = zig_crypto.utils_random;
 
-// 填充随机字节
+// Fill with random bytes
 var bytes: [32]u8 = undefined;
 random.fillRandom(&bytes);
 ```
 
-#### 安全内存
+#### Secure Memory
 
 ```zig
 const mem = zig_crypto.utils_mem;
 
-// 恒定时间比较
+// Constant-time comparison
 const eq = mem.constantTimeEq(&a, &b);
 
-// 安全清零
+// Secure zero
 mem.secureZero(&sensitive_data);
 ```
 
 ---
 
-## 构建与测试 / Build & Test
+## Build & Test
 
 ```bash
-# 构建库
+# Build library
 zig build
 
-# 运行测试
+# Run tests
 zig build test
 
-# 查看所有构建选项
+# View all build options
 zig build -h
 ```
 
 ---
 
-## 模块依赖图 / Module Dependency Graph
+## Module Dependency Graph
 
 ```
 lib.zig
@@ -502,39 +496,39 @@ lib.zig
 
 ---
 
-## 参考标准 / References
+## Standards & References
 
-### 国密标准 (GM/T)
-- [GM/T 0002-2012](http://www.gmisp.cn/) — SM4 分组密码算法
-- [GM/T 0003-2012](http://www.gmisp.cn/) — SM2 椭圆曲线公钥密码算法
-- [GM/T 0004-2012](http://www.gmisp.cn/) — SM3 密码杂凑算法
+### Chinese National Standards (GM/T)
+- [GM/T 0002-2012](http://www.gmisp.cn/) — SM4 Block Cipher Algorithm
+- [GM/T 0003-2012](http://www.gmisp.cn/) — SM2 Elliptic Curve Public Key Algorithm
+- [GM/T 0004-2012](http://www.gmisp.cn/) — SM3 Cryptographic Hash Algorithm
 
-### 国际标准
+### International Standards
 - FIPS 180-4 — SHA-256
 - RFC 2104 — HMAC
 - RFC 5869 — HKDF
 - RFC 8032 — Ed25519
 - BIP 173 — Bech32
 - BIP 350 — Bech32m
-- SEC 2 — secp256k1 曲线参数
+- SEC 2 — secp256k1 Curve Parameters
 
-### 实现参考
-- [OpenSSL](https://www.openssl.org/) — SM3/SM4 参考实现
-- [Linux Kernel crypto/sm4.c](https://github.com/torvalds/linux/blob/master/crypto/sm4.c) — SM4 优化实现
+### Implementation References
+- [OpenSSL](https://www.openssl.org/) — SM3/SM4 reference implementation
+- [Linux Kernel crypto/sm4.c](https://github.com/torvalds/linux/blob/master/crypto/sm4.c) — SM4 optimized implementation
 
 ---
 
-## 许可证 / License
+## License
 
 MIT License
 
 ---
 
-## 贡献 / Contributing
+## Contributing
 
-Issues 和 Pull Requests 欢迎！
+Issues and Pull Requests are welcome!
 
-## 致谢 / Acknowledgments
+## Acknowledgments
 
-- 国密算法标准由国家密码管理局发布
-- 参考了 OpenSSL、Linux Kernel 等开源项目
+- Chinese national cryptographic standards published by the State Cryptography Administration
+- Implementation references from OpenSSL, Linux Kernel and other open source projects
